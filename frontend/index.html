@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FocusFlow – Student Productivity Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
+        "firebase/compat/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js",
+        "firebase/compat/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"
+      }
+    }
+  </script>
+</head>
+<body class="theme-dark">
+  <nav class="navbar glass-panel">
+    <div class="logo">
+      <span class="logo-icon">🌊</span> FocusFlow
+    </div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="login.html" class="btn-outline">Log In</a>
+      <a href="signup.html" class="btn-primary">Sign Up</a>
+      <button id="theme-toggle" class="btn-icon" aria-label="Toggle Theme">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero">
+      <div class="hero-content">
+        <h1 class="animate-up">Master Your Studies with <span class="gradient-text">FocusFlow</span></h1>
+        <p class="animate-up delay-1">The ultimate student productivity tracker. Manage tasks, track study habits, and achieve your goals with a premium, distraction-free experience.</p>
+        <div class="cta-buttons animate-up delay-2">
+          <a href="signup.html" class="btn-primary btn-large">Get Started for Free</a>
+          <a href="#features" class="btn-outline btn-large">Explore Features</a>
+        </div>
+      </div>
+      <div class="hero-visual animate-up delay-3">
+        <!-- Mockup visualization -->
+        <div class="glass-card mockup-card">
+          <div class="mockup-header">
+            <div class="dots"><span></span><span></span><span></span></div>
+            <div class="mockup-title">FocusFlow Dashboard</div>
+          </div>
+          <div class="mockup-body">
+            <div class="mockup-sidebar"></div>
+            <div class="mockup-content">
+              <div class="mockup-widget full-width"></div>
+              <div class="mockup-widget half-width"></div>
+              <div class="mockup-widget half-width"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="features">
+      <h2 class="section-title text-center">Everything you need to succeed</h2>
+      <div class="feature-grid">
+        <div class="glass-card feature-card">
+          <div class="feature-icon">✅</div>
+          <h3>Task Management</h3>
+          <p>Organize assignments, exams, and personal study sessions with due dates and priorities.</p>
+        </div>
+        <div class="feature-card glass-card">
+          <div class="feature-icon">📅</div>
+          <h3>Weekly Timetable</h3>
+          <p>Plan your week ahead with color-coded subject slots and drag-and-drop scheduling.</p>
+        </div>
+        <div class="feature-card glass-card">
+          <div class="feature-icon">📈</div>
+          <h3>Progress Analytics</h3>
+          <p>Visualize your study hours, task completion trends, and consistency streaks.</p>
+        </div>
+        <div class="feature-card glass-card">
+          <div class="feature-icon">🎯</div>
+          <h3>Goal Tracking</h3>
+          <p>Set short-term targets and long-term milestones, and get rewarded for consistency.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="glass-panel">
+    <p>&copy; 2026 FocusFlow. Built for student productivity.</p>
+  </footer>
+
+    <!-- Firebase SDK (Compat version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <!-- Firebase Modular Auth -->
+  <script type="module" src="js/firebase.js"></script>
+  
+  <script src="js/store.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

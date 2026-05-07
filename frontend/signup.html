@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - FocusFlow</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
+        "firebase/compat/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js",
+        "firebase/compat/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"
+      }
+    }
+  </script>
+  <style>
+    .auth-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 450px;
+      padding: 40px;
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .auth-header h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .form-control {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.1);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+      transition: border-color 0.3s;
+    }
+    :root[data-theme="light"] .form-control {
+      background: rgba(255,255,255,0.5);
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent-color);
+    }
+    .btn-block {
+      width: 100%;
+      margin-top: 10px;
+    }
+    .auth-footer {
+      margin-top: 24px;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    .auth-footer a {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+    }
+    .role-selection {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .role-card {
+      flex: 1;
+      padding: 20px;
+      border: 2px solid var(--glass-border);
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .role-card:hover {
+      border-color: var(--accent-color);
+      background: rgba(255,255,255,0.05);
+    }
+    .role-card.selected {
+      border-color: var(--accent-color);
+      background: rgba(16,185,129,0.1);
+    }
+    .role-card .icon {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+    .role-card h3 {
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+    .role-card p {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .signup-form-section {
+      display: none;
+    }
+    .signup-form-section.active {
+      display: block;
+    }
+    .pending-notice {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .pending-notice h4 {
+      color: #f59e0b;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body class="theme-dark">
+  <a href="index.html" class="back-btn">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back
+  </a>
+
+  <div class="auth-container">
+    <div class="glass-card auth-card animate-up">
+      <div class="auth-header">
+        <div class="logo justify-center" style="justify-content: center; margin-bottom: 16px;">
+          <span class="logo-icon">🌊</span> FocusFlow
+        </div>
+        <h1>Create Account</h1>
+        <p class="text-secondary">Select your role to get started.</p>
+      </div>
+
+      <!-- Role Selection -->
+      <div class="role-selection">
+        <div class="role-card" data-role="student" onclick="selectRole('student')">
+          <div class="icon">🎓</div>
+          <h3>Student</h3>
+          <p>Track your studies</p>
+        </div>
+        <div class="role-card" data-role="teacher" onclick="selectRole('teacher')">
+          <div class="icon">👨‍🏫</div>
+          <h3>Teacher</h3>
+          <p>Manage students</p>
+        </div>
+      </div>
+
+      <!-- Student Signup Form -->
+      <div id="student-signup" class="signup-form-section">
+        <div class="pending-notice">
+          <h4>⚠️ Approval Required</h4>
+          <p style="font-size: 0.9rem;">After signing up, your teacher will need to approve your account before you can access the dashboard.</p>
+        </div>
+        <form id="student-signup-form">
+          <div class="form-group">
+            <label for="student-name">Full Name</label>
+            <input type="text" id="student-name" class="form-control" required placeholder="John Doe">
+          </div>
+          <div class="form-group">
+            <label for="student-email">Email</label>
+            <input type="email" id="student-email" class="form-control" required placeholder="you@example.com">
+          </div>
+          <div class="form-group">
+            <label for="student-password">Password</label>
+            <input type="password" id="student-password" class="form-control" required placeholder="••••••••" minlength="6">
+          </div>
+          <div class="form-group">
+            <label for="student-school">School Name</label>
+            <input type="text" id="student-school" class="form-control" required placeholder="Enter your school name">
+          </div>
+          <div class="form-group">
+            <label for="student-class">Class</label>
+            <input type="text" id="student-class" class="form-control" required placeholder="e.g., 10th Grade, Class 10">
+          </div>
+          <button type="submit" class="btn-primary btn-block">Sign Up as Student</button>
+        </form>
+      </div>
+
+      <!-- Teacher Signup Form -->
+      <div id="teacher-signup" class="signup-form-section">
+        <form id="teacher-signup-form">
+          <div class="form-group">
+            <label for="teacher-name">Full Name</label>
+            <input type="text" id="teacher-name" class="form-control" required placeholder="Jane Smith">
+          </div>
+          <div class="form-group">
+            <label for="teacher-email">Email</label>
+            <input type="email" id="teacher-email" class="form-control" required placeholder="you@example.com">
+          </div>
+          <div class="form-group">
+            <label for="teacher-password">Password</label>
+            <input type="password" id="teacher-password" class="form-control" required placeholder="••••••••" minlength="6">
+          </div>
+          <div class="form-group">
+            <label for="teacher-school">School Name</label>
+            <input type="text" id="teacher-school" class="form-control" required placeholder="Enter your school name">
+          </div>
+          <div class="form-group">
+            <label for="teacher-class">Class</label>
+            <input type="text" id="teacher-class" class="form-control" required placeholder="e.g., 10th Grade, Class 10">
+          </div>
+          <div class="form-group">
+            <label for="teacher-subject">Subject</label>
+            <input type="text" id="teacher-subject" class="form-control" required placeholder="e.g., Mathematics, Science">
+          </div>
+          <button type="submit" class="btn-primary btn-block">Sign Up as Teacher</button>
+        </form>
+      </div>
+
+      <div class="auth-footer">
+        Already have an account? <a href="login.html">Log in</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="js/store.js"></script>
+  <script>
+    Store.init();
+  </script>
+  <script type="module" src="js/auth-module.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    let selectedRole = null;
+
+    function selectRole(role) {
+      selectedRole = role;
+      document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
+      document.querySelector(`[data-role="${role}"]`).classList.add('selected');
+      
+      document.querySelectorAll('.signup-form-section').forEach(section => section.classList.remove('active'));
+      document.getElementById(`${role}-signup`).classList.add('active');
+    }
+  </script>
+</body>
+</html>

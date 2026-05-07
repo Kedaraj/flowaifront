@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Dashboard - FocusFlow</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
+        "firebase/compat/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js",
+        "firebase/compat/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"
+      }
+    }
+  </script>
+  <style>
+    .layout-wrapper {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 250px;
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+      border-right: 1px solid var(--glass-border);
+    }
+    .sidebar-header {
+      padding: 0 20px 20px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .sidebar-nav {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 0 10px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .nav-item:hover, .nav-item.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+    }
+    :root[data-theme="light"] .nav-item:hover,
+    :root[data-theme="light"] .nav-item.active {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    .nav-item.active {
+      border-left: 4px solid var(--accent-color);
+    }
+    .main-content {
+      flex: 1;
+      margin-left: 250px;
+      padding: 20px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 20px;
+    }
+    .widget {
+      padding: 24px;
+    }
+    .col-span-4 { grid-column: span 4; }
+    .col-span-6 { grid-column: span 6; }
+    .col-span-8 { grid-column: span 8; }
+    .col-span-12 { grid-column: span 12; }
+    .widget-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .widget-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 10px 0;
+    }
+    .notification-badge {
+      background: var(--danger);
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      margin-left: 8px;
+    }
+    .student-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .student-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    .student-item:hover {
+      background: rgba(255,255,255,0.05);
+    }
+    .student-info h4 {
+      margin-bottom: 4px;
+    }
+    .student-info p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .student-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.85rem;
+    }
+    .request-card {
+      padding: 16px;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .request-card.pending {
+      border-left: 4px solid #f59e0b;
+    }
+    .request-card.approved {
+      border-left: 4px solid var(--success);
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 12px;
+    }
+    .tab-btn {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+    .tab-btn:hover, .tab-btn.active {
+      background: rgba(255,255,255,0.1);
+      color: var(--text-primary);
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px 14px;
+      background: rgba(0,0,0,0.1);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+    :root[data-theme="light"] .form-control {
+      background: rgba(255,255,255,0.5);
+    }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal {
+      width: 100%;
+      max-width: 500px;
+      padding: 24px;
+      border-radius: 16px;
+    }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="layout-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar glass-panel">
+      <div class="sidebar-header logo">
+        <span class="logo-icon">🌊</span> FocusFlow
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-item active" onclick="showTab('overview')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          Overview
+        </div>
+        <div class="nav-item" onclick="showTab('students')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          My Students
+        </div>
+        <div class="nav-item" onclick="showTab('requests')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          Requests
+          <span id="request-badge" class="notification-badge" style="display:none">0</span>
+        </div>
+        <div class="nav-item" onclick="showTab('assignments')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg>
+          Assignments
+        </div>
+        <div class="nav-item text-danger" id="logout-btn" style="margin-top: auto;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          Logout
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <h2>Welcome, <span class="gradient-text" id="teacher-name">Teacher</span> 👨‍🏫</h2>
+          <p class="text-secondary">Manage your students and assignments.</p>
+        </div>
+        <div class="user-profile">
+          <button id="theme-toggle" class="btn-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+          </button>
+          <div class="avatar" id="profile-avatar">T</div>
+        </div>
+      </header>
+
+      <!-- Overview Tab -->
+      <div id="tab-overview" class="tab-content active">
+        <div class="dashboard-grid">
+          <!-- Stats -->
+          <div class="glass-card widget col-span-4 animate-up">
+            <div class="widget-header">
+              <span class="widget-title">Total Students</span>
+            </div>
+            <div class="stat-value" id="total-students">0</div>
+            <p class="text-secondary">Approved students</p>
+          </div>
+          <div class="glass-card widget col-span-4 animate-up delay-1">
+            <div class="widget-header">
+              <span class="widget-title">Pending Requests</span>
+            </div>
+            <div class="stat-value" id="pending-requests">0</div>
+            <p class="text-secondary">Awaiting approval</p>
+          </div>
+          <div class="glass-card widget col-span-4 animate-up delay-2">
+            <div class="widget-header">
+              <span class="widget-title">Tasks Assigned</span>
+            </div>
+            <div class="stat-value" id="total-tasks">0</div>
+            <p class="text-secondary">Active assignments</p>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="glass-card widget col-span-12 animate-up delay-3">
+            <div class="widget-header">
+              <span class="widget-title">Quick Actions</span>
+            </div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button class="btn-primary" onclick="openAssignTaskModal()">Assign Task</button>
+              <button class="btn-outline" onclick="showTab('students')">View Students</button>
+              <button class="btn-outline" onclick="showTab('requests')">Review Requests</button>
+            </div>
+          </div>
+
+          <!-- Recent Students -->
+          <div class="glass-card widget col-span-6 animate-up delay-4">
+            <div class="widget-header">
+              <span class="widget-title">Recent Students</span>
+              <button class="btn-outline btn-sm" onclick="showTab('students')">View All</button>
+            </div>
+            <ul class="student-list" id="recent-students">
+              <li class="text-secondary">No students yet.</li>
+            </ul>
+          </div>
+
+          <!-- Recent Requests -->
+          <div class="glass-card widget col-span-6 animate-up delay-4">
+            <div class="widget-header">
+              <span class="widget-title">Recent Requests</span>
+              <button class="btn-outline btn-sm" onclick="showTab('requests')">View All</button>
+            </div>
+            <div id="recent-requests">
+              <p class="text-secondary">No pending requests.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Students Tab -->
+      <div id="tab-students" class="tab-content">
+        <div class="glass-card widget animate-up">
+          <div class="widget-header">
+            <span class="widget-title">My Students</span>
+          </div>
+          <ul class="student-list" id="all-students">
+            <li class="text-secondary">No approved students yet.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Requests Tab -->
+      <div id="tab-requests" class="tab-content">
+        <div class="glass-card widget animate-up">
+          <div class="widget-header">
+            <span class="widget-title">Pending Approval Requests</span>
+          </div>
+          <div id="all-requests">
+            <p class="text-secondary">No pending requests.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assignments Tab -->
+      <div id="tab-assignments" class="tab-content">
+        <div class="tabs">
+          <button class="tab-btn active" onclick="showAssignmentTab('tasks')">Tasks</button>
+          <button class="tab-btn" onclick="showAssignmentTab('timetable')">Timetable</button>
+          <button class="tab-btn" onclick="showAssignmentTab('goals')">Goals</button>
+        </div>
+
+        <!-- Tasks Section -->
+        <div id="assignment-tasks" class="tab-content active">
+          <div class="glass-card widget">
+            <div class="widget-header">
+              <span class="widget-title">Assigned Tasks</span>
+              <button class="btn-primary btn-sm" onclick="openAssignTaskModal()">+ Assign Task</button>
+            </div>
+            <div id="assigned-tasks-list">
+              <p class="text-secondary">No tasks assigned yet.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timetable Section -->
+        <div id="assignment-timetable" class="tab-content">
+          <div class="glass-card widget">
+            <div class="widget-header">
+              <span class="widget-title">Student Timetables</span>
+              <button class="btn-primary btn-sm" onclick="openTimetableModal()">+ Add Slot</button>
+            </div>
+            <div id="assigned-timetable-list">
+              <p class="text-secondary">No timetable entries yet.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Goals Section -->
+        <div id="assignment-goals" class="tab-content">
+          <div class="glass-card widget">
+            <div class="widget-header">
+              <span class="widget-title">Student Goals</span>
+              <button class="btn-primary btn-sm" onclick="openGoalModal()">+ Add Goal</button>
+            </div>
+            <div id="assigned-goals-list">
+              <p class="text-secondary">No goals assigned yet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Assign Task Modal -->
+  <div class="modal-overlay" id="task-modal">
+    <div class="glass-card modal">
+      <h3 style="margin-bottom: 20px;">Assign Task to Student</h3>
+      <form id="assign-task-form">
+        <div class="form-group">
+          <label>Select Student</label>
+          <select id="task-student" class="form-control" required>
+            <option value="">Choose a student...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Task Title</label>
+          <input type="text" id="task-title" class="form-control" required placeholder="e.g., Complete Chapter 5 Exercise">
+        </div>
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" id="task-due" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="task-priority" class="form-control">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn-outline" onclick="closeModal('task-modal')">Cancel</button>
+          <button type="submit" class="btn-primary">Assign Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Timetable Modal -->
+  <div class="modal-overlay" id="timetable-modal">
+    <div class="glass-card modal">
+      <h3 style="margin-bottom: 20px;">Add Timetable Slot</h3>
+      <form id="add-timetable-form">
+        <div class="form-group">
+          <label>Select Student</label>
+          <select id="tt-student" class="form-control" required>
+            <option value="">Choose a student...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Subject</label>
+          <input type="text" id="tt-subject" class="form-control" required placeholder="e.g., Mathematics">
+        </div>
+        <div class="form-group">
+          <label>Day</label>
+          <select id="tt-day" class="form-control" required>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+            <option value="Saturday">Saturday</option>
+            <option value="Sunday">Sunday</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Time</label>
+          <input type="time" id="tt-time" class="form-control" required>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn-outline" onclick="closeModal('timetable-modal')">Cancel</button>
+          <button type="submit" class="btn-primary">Add Slot</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Goal Modal -->
+  <div class="modal-overlay" id="goal-modal">
+    <div class="glass-card modal">
+      <h3 style="margin-bottom: 20px;">Assign Goal to Student</h3>
+      <form id="add-goal-form">
+        <div class="form-group">
+          <label>Select Student</label>
+          <select id="goal-student" class="form-control" required>
+            <option value="">Choose a student...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Goal Title</label>
+          <input type="text" id="goal-title" class="form-control" required placeholder="e.g., Achieve 90% in Math">
+        </div>
+        <div class="form-group">
+          <label>Target Date</label>
+          <input type="date" id="goal-target" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="goal-description" class="form-control" rows="3" placeholder="Describe the goal..."></textarea>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn-outline" onclick="closeModal('goal-modal')">Cancel</button>
+          <button type="submit" class="btn-primary">Assign Goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Student Progress Modal -->
+  <div class="modal-overlay" id="progress-modal">
+    <div class="glass-card modal" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 id="progress-student-name">Student Progress</h3>
+        <button type="button" class="btn-outline" onclick="closeModal('progress-modal')">Close</button>
+      </div>
+      
+      <div id="progress-content">
+        <!-- Student Info -->
+        <div class="glass-card" style="margin-bottom: 20px; padding: 16px;">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div class="avatar" id="progress-avatar" style="width: 60px; height: 60px; font-size: 1.5rem;">A</div>
+            <div>
+              <h4 id="progress-name" style="margin: 0;">Student Name</h4>
+              <p id="progress-email" style="margin: 4px 0; color: var(--text-secondary); font-size: 0.9rem;">email@example.com</p>
+              <p id="progress-school" style="margin: 0; font-size: 0.8rem;">School - Class</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;">
+          <div class="glass-card" style="padding: 16px; text-align: center;">
+            <div style="font-size: 2rem; font-weight: bold; color: var(--success);" id="progress-task-completion">0%</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">Task Completion</div>
+          </div>
+          <div class="glass-card" style="padding: 16px; text-align: center;">
+            <div style="font-size: 2rem; font-weight: bold; color: var(--accent-color);" id="progress-study-hours">0</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">Study Hours</div>
+          </div>
+          <div class="glass-card" style="padding: 16px; text-align: center;">
+            <div style="font-size: 2rem; font-weight: bold; color: var(--warning);" id="progress-tasks-count">0</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">Active Tasks</div>
+          </div>
+        </div>
+
+        <!-- Task List -->
+        <div class="glass-card" style="padding: 16px; margin-bottom: 16px;">
+          <h4 style="margin-bottom: 12px;">Assigned Tasks</h4>
+          <div id="progress-tasks-list" style="max-height: 200px; overflow-y: auto;">
+            <p class="text-secondary">No tasks assigned yet.</p>
+          </div>
+        </div>
+
+        <!-- Goals List -->
+        <div class="glass-card" style="padding: 16px;">
+          <h4 style="margin-bottom: 12px;">Goals</h4>
+          <div id="progress-goals-list" style="max-height: 150px; overflow-y: auto;">
+            <p class="text-secondary">No goals assigned yet.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Firebase SDK (Compat version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <!-- Firebase Modular Auth -->
+  <script type="module" src="js/firebase.js"></script>
+  
+  <script src="js/store.js"></script>
+  <script>
+    Store.init();
+  </script>
+  <script src="js/main.js"></script>
+  <script src="js/teacher-dashboard.js"></script>
+</body>
+</html>

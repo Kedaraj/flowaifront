@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timetable - FocusFlow</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
+        "firebase/compat/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js",
+        "firebase/compat/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"
+      }
+    }
+  </script>
+  <style>
+    .layout-wrapper { display: flex; min-height: 100vh; }
+    /* Reusing Sidebar CSS */
+    .sidebar { width: 250px; padding: 20px 0; display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; border-right: 1px solid var(--glass-border); }
+    .sidebar-header { padding: 0 20px 20px; margin-bottom: 20px; border-bottom: 1px solid var(--glass-border); }
+    .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 5px; padding: 0 10px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: var(--text-secondary); text-decoration: none; border-radius: 8px; transition: all 0.3s ease; font-weight: 500; }
+    .nav-item:hover, .nav-item.active { background: rgba(255, 255, 255, 0.1); color: var(--text-primary); }
+    :root[data-theme="light"] .nav-item:hover, :root[data-theme="light"] .nav-item.active { background: rgba(0, 0, 0, 0.05); }
+    .nav-item.active { border-left: 4px solid var(--accent-color); }
+    
+    .main-content { flex: 1; margin-left: 250px; padding: 20px 40px; display: flex; flex-direction: column; gap: 30px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--glass-border); }
+    
+    /* Timetable Grid */
+    .timetable-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .timetable-wrapper {
+      overflow-x: auto;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 1px;
+    }
+    .timetable-grid {
+      display: grid;
+      grid-template-columns: 80px repeat(7, 1fr);
+      min-width: 800px;
+      background: var(--glass-border);
+      gap: 1px;
+      border-radius: 12px;
+    }
+    .time-header, .day-header {
+      background: var(--bg-secondary);
+      padding: 15px 10px;
+      text-align: center;
+      font-weight: 600;
+    }
+    .time-slot {
+      background: var(--bg-primary);
+      padding: 10px;
+      min-height: 80px;
+      position: relative;
+      transition: background 0.2s;
+    }
+    .time-slot:hover { background: rgba(255, 255, 255, 0.05); cursor: pointer; }
+    
+    /* Subject Cards */
+    .subject-card {
+      position: absolute;
+      top: 2px; bottom: 2px; left: 2px; right: 2px;
+      border-radius: 6px;
+      padding: 8px;
+      font-size: 0.85rem;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .subject-math { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+    .subject-physics { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+    .subject-cs { background: linear-gradient(135deg, #10b981, #047857); }
+    .subject-history { background: linear-gradient(135deg, #f59e0b, #b45309); }
+    select option { background: var(--bg-primary); color: var(--text-primary); }
+  </style>
+</head>
+<body class="theme-dark">
+  <div class="layout-wrapper">
+    <aside class="sidebar glass-panel">
+      <div class="sidebar-header logo">
+        <span class="logo-icon">🌊</span> FocusFlow
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          Dashboard
+        </a>
+        <a href="tasks.html" class="nav-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          Tasks
+        </a>
+        <a href="timetable.html" class="nav-item active">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          Timetable
+        </a>
+        <a href="analytics.html" class="nav-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          Analytics
+        </a>
+        <a href="goals.html" class="nav-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+          Goals
+        </a>
+        <a href="settings.html" class="nav-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
+          Settings
+        </a>
+        <a href="#" id="logout-btn" class="nav-item text-danger" style="margin-top: auto;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          Logout
+        </a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <h2>Weekly Timetable 📅</h2>
+          <p class="text-secondary">Plan your study sessions for maximum efficiency.</p>
+        </div>
+        <button id="theme-toggle" class="btn-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+        </button>
+      </header>
+
+      <div class="timetable-controls">
+        <h3>Week 42: Oct 19 - Oct 25</h3>
+        <div style="display:flex; gap:10px;">
+          <button id="btn-pdf" class="btn-outline">Download PDF</button>
+          <button id="btn-add-slot" class="btn-primary">+ Add Slot</button>
+        </div>
+      </div>
+
+      <div class="timetable-wrapper animate-up" id="timetable-capture">
+        <div class="timetable-grid">
+          <!-- Header -->
+          <div class="time-header" style="border-top-left-radius: 12px;">Time</div>
+          <div class="day-header">Monday</div>
+          <div class="day-header">Tuesday</div>
+          <div class="day-header">Wednesday</div>
+          <div class="day-header">Thursday</div>
+          <div class="day-header">Friday</div>
+          <div class="day-header">Saturday</div>
+          <div class="day-header" style="border-top-right-radius: 12px;">Sunday</div>
+
+          <!-- 9 AM Row -->
+          <div class="time-header">09:00 AM</div>
+          <div class="time-slot" data-day="Monday" data-time="09:00 AM"></div>
+          <div class="time-slot" data-day="Tuesday" data-time="09:00 AM"></div>
+          <div class="time-slot" data-day="Wednesday" data-time="09:00 AM"></div>
+          <div class="time-slot" data-day="Thursday" data-time="09:00 AM"></div>
+          <div class="time-slot" data-day="Friday" data-time="09:00 AM"></div>
+          <div class="time-slot" data-day="Saturday" data-time="09:00 AM"></div>
+          <div class="time-slot" data-day="Sunday" data-time="09:00 AM"></div>
+
+          <!-- 10 AM Row -->
+          <div class="time-header">10:00 AM</div>
+          <div class="time-slot" data-day="Monday" data-time="10:00 AM"></div>
+          <div class="time-slot" data-day="Tuesday" data-time="10:00 AM"></div>
+          <div class="time-slot" data-day="Wednesday" data-time="10:00 AM"></div>
+          <div class="time-slot" data-day="Thursday" data-time="10:00 AM"></div>
+          <div class="time-slot" data-day="Friday" data-time="10:00 AM"></div>
+          <div class="time-slot" data-day="Saturday" data-time="10:00 AM"></div>
+          <div class="time-slot" data-day="Sunday" data-time="10:00 AM"></div>
+
+          <!-- 11 AM Row -->
+          <div class="time-header">11:00 AM</div>
+          <div class="time-slot" data-day="Monday" data-time="11:00 AM"></div>
+          <div class="time-slot" data-day="Tuesday" data-time="11:00 AM"></div>
+          <div class="time-slot" data-day="Wednesday" data-time="11:00 AM"></div>
+          <div class="time-slot" data-day="Thursday" data-time="11:00 AM"></div>
+          <div class="time-slot" data-day="Friday" data-time="11:00 AM"></div>
+          <div class="time-slot" data-day="Saturday" data-time="11:00 AM"></div>
+          <div class="time-slot" data-day="Sunday" data-time="11:00 AM"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Slot Modal -->
+  <div class="modal-overlay" id="slot-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:1000;">
+    <div class="glass-card modal" style="width:100%; max-width:400px;">
+      <h3 style="margin-bottom: 20px;">Add Timetable Slot</h3>
+      <form id="slot-form">
+        <div style="margin-bottom: 16px;">
+          <label style="display:block; margin-bottom:8px;">Subject</label>
+          <input type="text" id="slot-subject" style="width:100%; padding:10px; background:rgba(0,0,0,0.1); border:1px solid var(--glass-border); color:inherit; border-radius:8px;" required placeholder="e.g. Math 101">
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="display:block; margin-bottom:8px;">Type</label>
+          <input type="text" id="slot-type" style="width:100%; padding:10px; background:rgba(0,0,0,0.1); border:1px solid var(--glass-border); color:inherit; border-radius:8px;" required placeholder="e.g. Lecture, Lab">
+        </div>
+        <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+          <div style="flex: 1;">
+            <label style="display:block; margin-bottom:8px;">Day</label>
+            <select id="slot-day" style="width:100%; padding:10px; background:rgba(0,0,0,0.1); border:1px solid var(--glass-border); color:inherit; border-radius:8px;">
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
+              <option value="Sunday">Sunday</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label style="display:block; margin-bottom:8px;">Time</label>
+            <select id="slot-time" style="width:100%; padding:10px; background:rgba(0,0,0,0.1); border:1px solid var(--glass-border); color:inherit; border-radius:8px;">
+              <option value="09:00 AM">09:00 AM</option>
+              <option value="10:00 AM">10:00 AM</option>
+              <option value="11:00 AM">11:00 AM</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="display:block; margin-bottom:8px;">Color</label>
+          <select id="slot-color" style="width:100%; padding:10px; background:rgba(0,0,0,0.1); border:1px solid var(--glass-border); color:inherit; border-radius:8px;">
+            <option value="subject-math">Red</option>
+            <option value="subject-physics">Blue</option>
+            <option value="subject-cs">Green</option>
+            <option value="subject-history">Orange</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" id="close-slot-modal" class="btn-outline">Cancel</button>
+          <button type="submit" class="btn-primary">Add Slot</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Firebase SDK (Compat version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <!-- Firebase Modular Auth -->
+  <script type="module" src="js/firebase.js"></script>
+  
+  <script src="js/store.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/timetable.js"></script>
+</body>
+</html>
