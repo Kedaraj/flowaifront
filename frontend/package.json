@@ -1,0 +1,13 @@
+{
+  "name": "flowai-frontend",
+  "version": "1.0.0",
+  "description": "FocusFlow - Student Productivity Tracker Frontend",
+  "private": true,
+  "scripts": {
+    "start": "echo 'Static site - serve with any HTTP server'",
+    "dev": "echo 'Use any local server like python -m http.server 8000'"
+  },
+  "keywords": ["focus", "productivity", "student"],
+  "author": "",
+  "license": "ISC"
+}
